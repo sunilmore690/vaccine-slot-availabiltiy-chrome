@@ -2,7 +2,17 @@ const chromium = require('chrome-aws-lambda')
 const puppeteer = require('puppeteer-core')
 
 exports.handler = async (event, context) => {
-  let theTitle = null
+  const params = JSON.parse(event.body);
+  const pageUrl = params.pageUrl;
+  if(!pageUrl){
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        available: false,
+      }),
+    };
+  }
+  let available = false;
   let browser = null
   console.log('spawning chrome headless')
   try {
@@ -14,21 +24,21 @@ exports.handler = async (event, context) => {
       executablePath: executablePath,
       headless: chromium.headless,
     })
-
+ 
     // Do stuff with headless chrome
     const page = await browser.newPage()
-    const targetUrl = 'https://davidwells.io'
+     await page.setUserAgent(
+       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36"
+     );
+     await page.goto(pageUrl, { waitUntil: "networkidle2" });
+     //await page.waitForSelector(".result-loaded", { timeout: 5000 });
+     await page.waitForTimeout(2000);
 
-    // Goto page and then do stuff
-    await page.goto(targetUrl, {
-      waitUntil: ["domcontentloaded", "networkidle0"]
-    })
-
-    await page.waitForSelector('#phenomic')
-
-    theTitle = await page.title();
-
-    console.log('done on page', theTitle)
+      available = await page.evaluate(() => {
+       return document.querySelector(".got-result") ? true : false;
+     });
+     
+    
 
   } catch (error) {
     console.log('error', error)
@@ -48,7 +58,7 @@ exports.handler = async (event, context) => {
   return {
     statusCode: 200,
     body: JSON.stringify({
-      title: theTitle,
+      available: available,
     })
   }
 }
