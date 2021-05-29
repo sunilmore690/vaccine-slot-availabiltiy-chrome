@@ -31,7 +31,7 @@ exports.handler = async (event, context) => {
      );
      await page.goto(pageUrl, { waitUntil: "networkidle2" });
      //await page.waitForSelector(".result-loaded", { timeout: 5000 });
-     await page.waitForTimeout(2000);
+     //await page.waitForTimeout(2000);
 
       available = await page.evaluate(() => {
        return document.querySelector(".got-result") ? true : false;
